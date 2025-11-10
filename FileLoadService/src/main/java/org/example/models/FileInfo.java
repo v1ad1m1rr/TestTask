@@ -9,13 +9,15 @@ public class FileInfo {
     private LocalDateTime uploadDate;
     private LocalDateTime lastDownload;
     private int downloadCount;
+    private String uploadedBy;
 
-    public FileInfo(String originalName, String fileName) {
+    public FileInfo(String originalName, String fileName, String uploadedBy) {
         this.id = java.util.UUID.randomUUID().toString();
         this.originalName = originalName;
         this.fileName = fileName;
         this.uploadDate = LocalDateTime.now();
         this.downloadCount = 0;
+        this.uploadedBy = uploadedBy;
     }
 
     public String getId() { return id; }
@@ -24,6 +26,9 @@ public class FileInfo {
     public LocalDateTime getUploadDate() { return uploadDate; }
     public LocalDateTime getLastDownload() { return lastDownload; }
     public int getDownloadCount() { return downloadCount; }
+    public String getUploadedBy() {
+        return uploadedBy;
+    }
 
     public void incrementDownload() {
         this.downloadCount++;

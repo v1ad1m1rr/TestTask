@@ -4,127 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Upload Service</title>
-    <style>
-        body { font-family: Arial; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
-        button { padding: 10px; margin: 5px; cursor: pointer; }
-        input { padding: 10px; margin: 5px; }
-        .status { padding: 10px; margin: 10px 0; }
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; }
-        .link { width: 100%; padding: 10px; margin: 10px 0; }
-    </style>
+    <link rel="stylesheet" href="/static/styles/style.css">
 </head>
 <body>
-<h1>File Upload Service</h1>
+    <h1>File Upload Service</h1>
 
-<div class="section">
-    <h2>Загрузить файл</h2>
-    <input type="file" id="fileInput">
-    <button onclick="uploadFile()">Загрузить</button>
-    <div id="uploadStatus"></div>
-</div>
+    <div class="section" id="authSection">
+        <h2>🔐 Авторизация</h2>
+        <input type="text" id="username" placeholder="Имя пользователя">
+        <input type="password" id="password" placeholder="Пароль">
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button onclick="login()">Войти</button>
+            <button onclick="register()">Зарегистрироваться</button>
+        </div>
+        <div id="authStatus"></div>
+    </div>
 
-<div class="section" id="resultSection" style="display: none;">
-    <h2>Ссылка для скачивания</h2>
-    <input type="text" id="downloadLink" class="link" readonly>
-    <button onclick="copyLink()">Копировать ссылку</button>
-</div>
+    <div class="section" id="userSection" style="display: none;">
+        <h2>👤 Профиль</h2>
+        <p>Вы вошли как: <strong id="currentUser"></strong></p>
+        <button onclick="logout()">Выйти</button>
+    </div>
 
-<div class="section">
-    <h2>Статистика</h2>
-    <button onclick="loadStats()">Обновить статистику</button>
-    <div id="stats"></div>
-</div>
+    <div class="section" id="uploadSection" style="display: none;">
+        <h2>📤 Загрузить файл</h2>
+        <input type="file" id="fileInput">
+        <button onclick="uploadFile()">Загрузить файл</button>
+        <div id="uploadStatus"></div>
+    </div>
 
-<script>
-    const BASE_URL = 'http://localhost:3000/api';
+    <div class="section" id="resultSection" style="display: none;">
+        <h2>Ссылка для скачивания</h2>
+        <input type="text" id="downloadLink" class="link" readonly>
+        <button onclick="copyLink()">Копировать ссылку</button>
+    </div>
 
-    async function uploadFile() {
-        const fileInput = document.getElementById('fileInput');
-        const statusDiv = document.getElementById('uploadStatus');
-
-        if (!fileInput.files.length) {
-            showStatus(statusDiv, 'Выберите файл', 'error');
-            return;
-        }
-
-        const file = fileInput.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            showStatus(statusDiv, 'Загрузка...', '');
-
-            const response = await fetch(`${BASE_URL}/upload`, {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                showDownloadLink(result.fileInfo.downloadUrl);
-                showStatus(statusDiv, 'Файл загружен!', 'success');
-                fileInput.value = '';
-            } else {
-                showStatus(statusDiv, 'Ошибка: ' + result.error, 'error');
-            }
-        } catch (error) {
-            showStatus(statusDiv, 'Ошибка загрузки: ' + error.message, 'error');
-        }
-    }
-
-    function showDownloadLink(downloadPath) {
-        const resultSection = document.getElementById('resultSection');
-        const downloadLink = document.getElementById('downloadLink');
-
-        downloadLink.value = `http://localhost:3000${downloadPath}`;
-        resultSection.style.display = 'block';
-    }
-
-    function copyLink() {
-        const linkInput = document.getElementById('downloadLink');
-        linkInput.select();
-        document.execCommand('copy');
-        alert('Ссылка скопирована!');
-    }
-
-    async function loadStats() {
-        const statsDiv = document.getElementById('stats');
-
-        try {
-            const response = await fetch(`${BASE_URL}/stats`);
-            const stats = await response.json();
-
-            let html = `
-                <p><strong>Всего файлов:</strong> ${stats.totalFiles}</p>
-                <p><strong>Всего скачиваний:</strong> ${stats.totalDownloads}</p>
-            `;
-
-            if (stats.files && stats.files.length > 0) {
-                html += '<h3>Файлы:</h3>';
-                stats.files.forEach(file => {
-                    html += `
-                        <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
-                            <p><strong>${file.originalName}</strong></p>
-                            <p>Скачиваний: ${file.downloadCount}</p>
-                        </div>
-                    `;
-                });
-            }
-
-            statsDiv.innerHTML = html;
-        } catch (error) {
-            statsDiv.innerHTML = '<p>Ошибка загрузки статистики</p>';
-        }
-    }
-
-    function showStatus(element, message, type) {
-        element.textContent = message;
-        element.className = `status ${type}`;
-    }
-    loadStats();
-</script>
+    <div class="section">
+        <h2>Статистика</h2>
+        <button onclick="loadStats()" id="btn-load-stats" style="margin-bottom: 10px;">Обновить статистику</button>
+        <div id="stats"></div>
+    </div>
+    <script src="/static/scripts/script.js"></script>
 </body>
 </html>

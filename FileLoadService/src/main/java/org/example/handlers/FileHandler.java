@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.example.models.FileInfo;
 import org.example.models.FileManager;
+import org.example.models.UserManager;
 import org.example.utils.JsonUtils;
 
 import java.io.*;
@@ -14,10 +15,12 @@ import java.util.stream.Collectors;
 
 public class FileHandler implements HttpHandler {
     private FileManager fileManager;
+    private UserManager userManager;
     private String uploadDir = "uploads";
 
-    public FileHandler(FileManager fileManager) {
+    public FileHandler(FileManager fileManager, UserManager userManager) {
         this.fileManager = fileManager;
+        this.userManager = userManager;
     }
 
     @Override
@@ -49,17 +52,29 @@ public class FileHandler implements HttpHandler {
         }
 
         try {
+            String username = getAuthenticatedUser(exchange);
+            if (username == null) {
+                sendError(exchange, 401, "Требуется авторизация для просмотра статистики");
+                return;
+            }
             List<FileInfo> files = fileManager.getAllFiles();
+            List<FileInfo> userFiles = files.stream()
+                    .filter(file -> username.equals(file.getUploadedBy()))
+                    .toList();
+            int totalDownloads = userFiles.stream().mapToInt(FileInfo::getDownloadCount).sum();
 
             Map<String, Object> stats = Map.of(
-                    "totalFiles", files.size(),
-                    "totalDownloads", files.stream().mapToInt(FileInfo::getDownloadCount).sum(),
-                    "files", files.stream().map(file -> Map.of(
+                    "totalFiles", userFiles.size(),
+                    "totalDownloads", totalDownloads,
+                    "files", userFiles.stream().map(file -> Map.of(
                             "originalName", file.getOriginalName(),
                             "uploadDate", file.getUploadDate().toString(),
                             "lastDownload", file.getLastDownload() != null ?
                                     file.getLastDownload().toString() : "никогда",
-                            "downloadCount", file.getDownloadCount()
+                            "downloadCount", file.getDownloadCount(),
+                            "fileName", file.getFileName(),
+                            "downloadUrl", "/download/" + file.getFileName(),
+                            "uploadedBy", file.getUploadedBy()
                     )).collect(Collectors.toList())
             );
 
@@ -68,6 +83,15 @@ public class FileHandler implements HttpHandler {
         } catch (Exception e) {
             sendError(exchange, 500, "Ошибка получения статистики");
         }
+    }
+
+    private String getAuthenticatedUser(HttpExchange exchange) {
+        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            return userManager.getUsernameFromToken(token);
+        }
+        return null;
     }
 
     private void handleDownload(HttpExchange exchange) throws IOException {

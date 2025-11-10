@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.example.models.FileInfo;
 import org.example.models.FileManager;
+import org.example.models.UserManager;
 import org.example.utils.JsonUtils;
 
 import java.io.*;
@@ -13,10 +14,12 @@ import java.util.UUID;
 
 public class UploadHandler implements HttpHandler {
     private FileManager fileManager;
+    private UserManager userManager;
     private String uploadDir = "uploads";
 
-    public UploadHandler(FileManager fileManager) {
+    public UploadHandler(FileManager fileManager, UserManager userManager) {
         this.fileManager = fileManager;
+        this.userManager = userManager;
         createUploadDir();
     }
 
@@ -37,6 +40,13 @@ public class UploadHandler implements HttpHandler {
         }
 
         try {
+            String username = getAuthenticatedUser(exchange);
+            if (username == null) {
+                sendError(exchange, 401, "Требуется авторизация");
+                return;
+            }
+
+            System.out.println("Пользователь " + username + " загружает файл");
             InputStream is = exchange.getRequestBody();
 
             String originalName = "file_" + System.currentTimeMillis();
@@ -47,15 +57,17 @@ public class UploadHandler implements HttpHandler {
             long fileSize = Files.size(filePath);
             System.out.println("Файл сохранен: " + uniqueName + " (" + fileSize + " bytes)");
 
-            FileInfo fileInfo = fileManager.addFile(originalName, uniqueName);
+            FileInfo fileInfo = fileManager.addFile(originalName, uniqueName, username);
 
             Map<String, Object> response = Map.of(
                     "success", true,
                     "fileInfo", Map.of(
                             "id", fileInfo.getId(),
                             "originalName", fileInfo.getOriginalName(),
+                            "fileName", fileInfo.getFileName(),
                             "downloadUrl", "/download/" + fileInfo.getFileName(),
-                            "uploadDate", fileInfo.getUploadDate().toString()
+                            "uploadDate", fileInfo.getUploadDate().toString(),
+                            "uploadedBy", fileInfo.getUploadedBy()
                     )
             );
 
@@ -65,6 +77,14 @@ public class UploadHandler implements HttpHandler {
         } catch (Exception e) {
             sendError(exchange, 500, "Ошибка загрузки файла");
         }
+    }
+    private String getAuthenticatedUser(HttpExchange exchange) {
+        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            return userManager.getUsernameFromToken(token);
+        }
+        return null;
     }
 
     private void createUploadDir() {

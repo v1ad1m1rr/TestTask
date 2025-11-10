@@ -9,8 +9,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FileManager {
     private Map<String, FileInfo> files = new ConcurrentHashMap<>();
 
-    public FileInfo addFile(String originalName, String fileName) {
-        FileInfo fileInfo = new FileInfo(originalName, fileName);
+    public FileInfo addFile(String originalName, String fileName, String uploadedBy) {
+        FileInfo fileInfo = new FileInfo(originalName, fileName, uploadedBy);
         files.put(fileName, fileInfo);
         return fileInfo;
     }
