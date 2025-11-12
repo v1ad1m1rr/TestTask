@@ -16,18 +16,29 @@ public class Main {
         int M = Integer.parseInt(reader.readLine());
         reader.close();
 
-//        int[][] matrix = initializeMatrix(N, V, M);
-        int[][] matrix = {{4, 2, 1, 4}, {4, 3, 3, 3}, {1, 1, 1, 4}, {2, 2, 3, 2}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+        int[][] matrix = initializeMatrix(N, V, M);
+//        int[][] matrix = {{1, 2, 4, 1}, {3, 4, 1, 3}, {2, 1, 2, 2}, {3, 4, 3, 4}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+//        int[][] matrix = {{4, 2, 1, 4}, {4, 3, 3, 3}, {1, 1, 1, 4}, {2, 2, 3, 2}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+//        int[][] matrix = {{1, 4, 2, 2}, {4, 1, 3, 4}, {3, 3, 2, 2}, {4, 1, 3, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+//        int[][] matrix = {{2, 4, 3, 4}, {4, 3, 1, 1}, {4, 3, 1, 3}, {2, 2, 2, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+//        int[][] matrix = {{4, 5, 1, 3}, {2, 1, 1, 2}, {5, 3, 4, 4}, {2, 5, 1, 5}, {3, 4, 3, 2}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+//        int[][] matrix = {{2, 10, 4, 4}, {1, 8, 12, 8}, {10, 7, 5, 9}, {5, 3, 2, 5}, {6, 11, 8, 7}, {12, 12, 1, 2}, {4, 7, 8, 11}, {10, 11, 3, 1}, {10, 7, 9, 9}, {6, 2, 6, 11}, {4, 6, 9, 3}, {5, 3, 12, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}};
 
         System.out.println();
         for (int i = 0; i < N; i++) {
             System.out.println("Пробирка " + i + ": " + Arrays.toString(matrix[i]));
         }
 
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 100; i++) {
             if (!isLastMove) {
-                makeMove(matrix, M);
+                makeMove(matrix, M, V);
             }
+        }
+
+        System.out.println();
+        System.out.println("Ходов больше сделать нельзя. Финальное состояние матрицы: ");
+        for (int i = 0; i < N; i++) {
+            System.out.println("Пробирка " + i + ": " + Arrays.toString(matrix[i]));
         }
 //        int[][] afterFirPour = firstPour(matrix, M);
 //        System.out.println(Arrays.deepToString(afterFirPour));
@@ -80,7 +91,7 @@ public class Main {
 //        return matrix;
 //    }
 
-    public static int[][] makeMove(int[][] matrix, int M) {
+    public static int[][] makeMove(int[][] matrix, int M, int V) {
         int maxCountRow = 0;
         int numVialRow = 0;
         int neededTopRow = 1;
@@ -88,7 +99,9 @@ public class Main {
         int topRow;
         boolean isEmpty = false;
         boolean isFull = false;
+        boolean isCanPour;
         for (int i = 0; i < matrix.length - (matrix.length - M); i++) {
+            isCanPour = true;
             countRow = 1;
             topRow = findTop(matrix[i]);
             if (topRow == 0) {
@@ -98,17 +111,27 @@ public class Main {
             for (int j = pos; j < matrix[i].length - 1; j++) {
                 if (topRow == matrix[i][j + 1]) {
                     countRow++;
-                    if ((j + 1) == (matrix[i].length - 1)) {
+                    if ((j + 1) == (matrix[i].length - 1) && (countRow == matrix[i].length || countRow == matrix[i].length - 1)) {
                         countRow = 0;
+                        isCanPour = false;
                     }
                 } else {
                     break;
                 }
             }
-            if (countRow > maxCountRow) {
+
+            if (isCanPour) {
+                isCanPour = isCanPour(matrix, M, topRow, i, pos, countRow);
+            }
+//            System.out.println();
+//            System.out.print("Можем перелить цифру " + topRow + " из колбы номер " + i + " позиция: " + pos + " - ");
+//            System.out.println(isCanPour);
+            if (countRow > maxCountRow && isCanPour) {
+
                 maxCountRow = countRow;
                 numVialRow = i;
                 neededTopRow = topRow;
+
             }
         }
 
@@ -117,10 +140,10 @@ public class Main {
             return matrix;
         }
 
-        System.out.println(numVialRow);
-        System.out.println(neededTopRow);
-        System.out.println(maxCountRow);
-        System.out.println();
+//        System.out.println(numVialRow);
+//        System.out.println(neededTopRow);
+//        System.out.println(maxCountRow);
+//        System.out.println();
 
         int maxCountCol = 0;
         int numVialCol = 0;
@@ -129,13 +152,16 @@ public class Main {
         int topCol = 0;
 
         if (isEmptyExists(matrix, M)) {
+            // - 1
             for (int i = 0; i < matrix.length - (matrix.length - M) - 1; i++) {
                 countCol = 1;
                 topCol = findTop(matrix[i]);
-                for (int j = i; j < matrix[i].length - 1; j++) {
+                // matrix[i].length - 1
+                for (int j = i; j < M - 1; j++) {
                     int pos = findPositionTop(matrix[j + 1]);
                     if (topCol == matrix[j + 1][pos]) {
-                        if ((j + 1) != matrix[i].length && pos != 3) {
+                        // j + 1 != matrix[i].length
+                        if (pos != matrix[i].length - 1) {
                             countCol++;
                         }
                     }
@@ -148,10 +174,10 @@ public class Main {
             }
         }
 
-        System.out.println(numVialCol);
-        System.out.println(neededTopCol);
-        System.out.println(maxCountCol);
-        System.out.println();
+//        System.out.println(numVialCol);
+//        System.out.println(neededTopCol);
+//        System.out.println(maxCountCol);
+//        System.out.println();
 
 
         if (maxCountRow > maxCountCol) {
@@ -165,18 +191,12 @@ public class Main {
                     matrix[numVialRow][i] = 0;
                 }
             }
-            System.out.println(Arrays.deepToString(matrix));
+//            System.out.println(Arrays.deepToString(matrix));
 
             int countNull = 0;
             for (int i = 0; i < matrix.length; i++) {
                 countNull = 0;
-                if ((i == matrix.length - 1 || i == matrix.length - 2) && isEmpty(matrix[i])) {
-                    countNull = matrix[i].length;
-                    for (int j = 0; j < maxCountRow; j++) {
-                        matrix[i][matrix[i].length - j - 1] = neededTopRow;
-                    }
-                    break;
-                }
+
                 int top = findTop(matrix[i]);
                 if (top == neededTopRow) {
                     for (int j = 0; j < matrix[i].length; j++) {
@@ -189,6 +209,7 @@ public class Main {
                         for (int j = 0; j < countPour2; j++) {
                             if (matrix[i][matrix[i].length - j - 1] == 0) {
                                 matrix[i][matrix[i].length - j - 1] = neededTopRow;
+                                System.out.println("(" + numVialRow + ", " + i + ")");
                             } else {
                                 countPour2++;
                             }
@@ -196,18 +217,39 @@ public class Main {
                         break;
                     }
                 }
+                if (i != matrix.length - 1) {
+                    continue;
+                }
+
+                for (int j = 0; j < matrix.length; j++) {
+                    if (isEmpty(matrix[j]) && numVialRow != j) {
+//                        System.out.println();
+//                        System.out.println("deleter j: " + j + "   i: " + i);
+//                        System.out.println();
+                        countNull = matrix[j].length;
+                        for (int k = 0; k < maxCountRow; k++) {
+                            matrix[j][matrix[j].length - k - 1] = neededTopRow;
+                            System.out.println("(" + numVialRow + ", " + j + ")");
+                        }
+                        break;
+                    }
+                }
+
+
+
             }
         } else {
-
+            List<Integer> list = new ArrayList<>();
             for (int i = 0; i < matrix.length - (matrix.length - M); i++) {
                 int top = findTop(matrix[i]);
                 int pos = findPositionTop(matrix[i]);
                 if (top == neededTopCol && pos != matrix[i].length - 1) {
-                    System.out.println("top: " + top + "   pos: " + pos);
+//                    System.out.println("top: " + top + "   pos: " + pos);
+                    list.add(i);
                     matrix[i][pos] = 0;
                 }
             }
-            System.out.println(Arrays.deepToString(matrix));
+//            System.out.println(Arrays.deepToString(matrix));
 
             int countNull = 0;
             for (int i = 0; i < matrix.length; i++) {
@@ -216,6 +258,9 @@ public class Main {
                     countNull = matrix[i].length;
                     for (int j = 0; j < maxCountCol; j++) {
                         matrix[i][matrix[i].length - j - 1] = neededTopCol;
+                    }
+                    for (Integer integer : list) {
+                        System.out.println("(" + integer + ", " + i + ")");
                     }
                     break;
                 }
@@ -231,6 +276,7 @@ public class Main {
                         for (int j = 0; j < countPour; j++) {
                             if (matrix[i][matrix[i].length - j - 1] == 0) {
                                 matrix[i][matrix[i].length - j - 1] = neededTopCol;
+                                System.out.println("(" + numVialCol + ", " + i + ")");
                             } else {
                                 countPour++;
                             }
@@ -241,9 +287,41 @@ public class Main {
             }
         }
 
-        System.out.println(Arrays.deepToString(matrix));
+        System.out.println();
+        for (int i = 0; i < matrix.length; i++) {
+            System.out.println("Пробирка " + i + ": " + Arrays.toString(matrix[i]));
+        }
 
         return matrix;
+    }
+
+    public static boolean isCanPour(int[][] matrix, int M, int top, int posI, int posJ, int count) {
+        boolean isLastPos = false;
+        if (count != 1) {
+            isLastPos = posJ + count - 1 == matrix[0].length - 1;
+        }
+        for (int i = 0; i < matrix.length; i++) {
+            int topInEachArr = findTop(matrix[i]);
+            int posInEachArr = findPositionTop(matrix[i]);
+
+            boolean isLastPosArr = false;
+            if (count != 1) {
+                int countInEachArr = 1;
+                for (int j = posInEachArr; j < matrix[i].length - 1; j++) {
+                    countInEachArr = 1;
+                    if (matrix[i][j] == matrix[i][j + 1]) {
+                        countInEachArr++;
+                    }
+                }
+                isLastPosArr = posInEachArr + countInEachArr - 1 == matrix[i].length - 1;
+            }
+
+//            System.out.print("posArr: " + posInEachArr + " count: " + count + " topArr: " + topInEachArr + " top: " + top + "posI: " + posI + " i: " + i + " isLastPos " + isLastPos + " isLastPosArr " + isLastPosArr + "       ");
+            if ((posInEachArr >= count && topInEachArr == top && posI != i || isEmpty(matrix[i])) && (!isLastPos || isLastPosArr)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static int findTop (int[] vial) {
